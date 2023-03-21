@@ -234,3 +234,132 @@
 
 (defun get-float-time-seconds ()
   (float (/ (get-internal-real-time) internal-time-units-per-second)))
+
+(defclass lgate ()
+  ((inputs :initarg :inputs)
+   (output :initarg :output)
+   (observers :initarg :observers)
+   (properties :initarg :type)))
+
+(defun lgate-inputs (lgate) (slot-value lgate 'inputs))
+(defun lgate-output (lgate) (slot-value lgate 'output))
+(defun lgate-observers (lgate) (slot-value lgate 'observers))
+(defun lgate-type (lgate) (slot-value (slot-value lgate 'properties) 'name))
+(defun lgate-compute-fn (lgate) (slot-value (slot-value lgate 'properties) 'compute))
+(defun lgate-delay (lgate) (slot-value (slot-value lgate 'properties) 'delay))
+(defun lgate-add-observer! (lgate observer)
+  (push (slot-value lgate 'observers) observer))
+
+(defparameter *lgate-properties* (make-hash-table))
+
+;; Should be treated as a singleton that is shared between all instances
+;; of a particular type of lgate.
+(defclass lgate-properties ()
+  ((name :initarg :name)
+   (compute :initarg :compute)
+   (delay :initarg :delay)))
+
+(defun register-lgate (type function propagation-delay)
+  `(setf (gethash ,type *lgate-properties*)
+         (make-instance 'lgate-properties :name ,type :compute ,function :delay ,propagation-delay)))
+
+;; Create map from name->function, to be used in LGATE-UPDATE-STATE!.
+;; An lgate has some number of inputs and a single output.
+;; The function takes all of the inputs (maybe an array?) and computes
+;; the output (0 or 1).
+;; Keep running until there are no more events in the schedule (i.e. circuit
+;; has reached stable state).
+;; A nice metric: how many events per cycle are being executed.
+;; Another cool idea: calculate the 'breath' of the circuit graph, what's the
+;; longest number of cycles it could take a signal to propagate from 1 end to another?
+;; Nodes are gates, edges are inputs/outputs, weights on edges are the prop delay.
+(defmacro def-lgate (name function propagation-delay)
+  `(register-lgate ,name ,function ,propagation-delay))
+
+(defun make-inputs (size)
+  (make-array size :initial-element 0 :element-type 'integer))
+
+(defun inputs-size (inputs)
+  (array-dimension inputs 0))
+
+(defun inputs-get (inputs i)
+  (if (zerop (aref inputs i))
+      0
+      1))
+
+(defun inputs-register-change! (inputs i new-value)
+  (declare (bit new-value))
+  (if (zerop new-value)
+      (decf (aref inputs i))
+      (incf (aref inputs i))))
+
+(defun inputs-set! (inputs i new-value)
+  "This overrides the value of an input, even if other wires are sending
+power to it. So use with caution, preferably only for gates w/ a single input."
+  (declare (bit new-value))
+  (setf (aref inputs i) new-value))
+
+(defmacro iter-inputs ((inputs ref) &body body)
+  (alexandria:once-only (inputs)
+    `(loop for i from 0 upto (1- (inputs-size ,inputs))
+           for ,ref = (inputs-get ,inputs i)
+           do ,@body)))
+
+(defun compute-lgate-or (inputs)
+  (or (iter-inputs (inputs x)
+        (when (= x 1)
+          (return 1)))
+      0))
+
+(defun compute-lgate-and (inputs)
+  (or (iter-inputs (inputs x)
+        (when (= x 0)
+          (return 0)))
+      1))
+
+(defun compute-lgate-xor (inputs)
+  (let ((result 0))
+    (iter-inputs (inputs x)
+      (setf result (logxor result x)))
+    result))
+
+(defun compute-lgate-const (inputs)
+  (iter-inputs (inputs x)
+    (return x)))
+
+;;;; Gate definitions! They're the building blocks of circuits.
+;;;; I may or may not implement NAND in terms of other gates.
+(def-lgate and compute-lgate-and 4)
+(def-lgate or compute-lgate-or 4)
+(def-lgate xor compute-lgate-xor 5)
+;; This one just passes on whatever value is handed to it.
+;; Careful with propagation-delay=0, it could result in an
+;; infinite loop if 2 const lgates are connected together.
+;; Maybe the delay should be 1?
+(def-lgate const compute-lgate-const 0)
+
+(defun propagate-to-lgate! (lgate changed-input-index schedule)
+  (inputs-register-change! (lgate-inputs lgate) changed-input-index)
+  ;; 1. compute the new value using its compute function
+  ;; 2. add an event to set the new output value of this gate (just reference
+  ;;    to gate + new output value)
+  ;; 3. add events for each observer; depends on observer type, one type
+  ;;    would be lgate+input index, another type would be arbitrary function dispatch.
+  ;; Event instances should be drawn from a pool so that we don't
+  ;; create them gratuitously. They should contain the new output value as well
+  ;; as any data necessary for the execution of the event.
+  ;; Design question for later: it's possible that
+  ;; multiple inputs of a gate will be updated in the same cycle, so how we should
+  ;; execute each time period is to go through all the events and set new input values,
+  ;; then go back through all the affected lgates and propagate them.
+  ;; In that case... the INPUTS-REGISTER-CHANGE! call should not take place in this function.
+  ;; Optimisation: 2 wires connected to an lgate input, 1 turns on and 1 turns off. End result
+  ;; is that the lgate input hasn't changed. So in this case we don't need to propagate.
+  ;; After that's done, need an outer loop that executes events in the schedule, propagates
+  ;; changes, and so on. And the only other thing is a way to wire the gates together. Then
+  ;; I can test it.
+  ;; Execution should take place within the context of a circuit; when executing a circuit,
+  ;; I should check the gate with the max delay and that determines the schedule size. Really, there
+  ;; will be a very small schedule with lots and lots of events, as the circuit scales up.
+  )
+
