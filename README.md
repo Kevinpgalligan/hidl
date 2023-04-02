@@ -1,6 +1,19 @@
 ### Description
 A computer emulation framework based on Code: The Hidden Language of Computer Hardware.
 
+### TODO
+- Finish the schedule interface so that the half-adder test works (see 'test-session.txt').
+- Last touches to simulator (add all gates to schedule or whatever at the beginning).
+- Somehow hide interface of schedule & lgates better, so it's obvious how to use them. Also, fix ugly parts of the interface; having to specify number of inputs for gates (should be optional), and NOT gates should always have 1.
+- Design macro DSL for components and constructing circuits.
+
+### Dumping brainstorming
+A nice metric: how many events per cycle are being executed.
+
+Another cool idea: calculate the 'breath' of the circuit graph, what's the longest number of cycles it could take a signal to propagate from 1 end to another?
+
+Nodes are gates, edges are inputs/outputs, weights on edges are the prop delay.
+
 ### Planning
 Basic circuit to test: a single adder (2 lgates for setting input, print the output).
 
@@ -44,3 +57,58 @@ Assuming terminal graphics, it should be easier. Each group of memory cells defi
                      pointer. Maybe 'evaluate expression' should be its own state.
     * LET -> I think this is for assigning variables, I suppose we would have a table of variables somewhere
            and their values.
+
+
+### Dumping this test code here
+;;;; TESTING FOR THE SCHEDULE DATA STRUCTURE, can be used
+;;;; as the basis for unit tests.
+;; CL-USER> (defparameter *sched* (make-schedule 3))
+;; *SCHED*
+;; CL-USER> *sched*
+;; #(#<STACK > #<STACK > #<STACK >)
+;; CL-USER> (schedule-add-event! *sched* 1 0)
+;; 1
+;; CL-USER> *sched*
+;; #(#<STACK 1 > #<STACK > #<STACK >)
+;; CL-USER> (schedule-add-event! *sched* 1 2)
+;; 1
+;; CL-USER> *sched*
+;; #(#<STACK 1 > #<STACK > #<STACK 1 >)
+;; CL-USER> (schedule-add-event! *sched* 2 1)
+;; 2
+;; CL-USER> *sched*
+;; #(#<STACK 1 > #<STACK 2 > #<STACK 1 >)
+;; CL-USER> (schedule-add-event! *sched* 3 0)
+;; #<NODE value = 3>
+;; CL-USER> *sched*
+;; #(#<STACK 1 3 > #<STACK 2 > #<STACK 1 >)
+;; CL-USER> (schedule-empty-current-period! *sched*)
+;; NIL
+;; CL-USER> *sched*
+;; #(#<STACK > #<STACK 2 > #<STACK 1 >)
+;; CL-USER> (schedule-current-period *sched*)
+;; #<STACK >
+;; CL-USER> (schedule-advance! *sched*)
+;; 1
+;; CL-USER> *sched*
+;; #(#<STACK > #<STACK 2 > #<STACK 1 >)
+;; CL-USER> (schedule-add-event! *sched* 4 2)
+;; 4
+;; CL-USER> *sched*
+;; #(#<STACK 4 > #<STACK 2 > #<STACK 1 >)
+;; CL-USER> (schedule-add-event! *sched* 5 2)
+;; #<NODE value = 5>
+;; CL-USER> *sched*
+;; #(#<STACK 4 5 > #<STACK 2 > #<STACK 1 >)
+;; CL-USER> (schedule-advance! *sched*)
+;; 2
+;; CL-USER> *sched*
+;; #(#<STACK 4 5 > #<STACK > #<STACK 1 >)
+;; CL-USER> (index *sched*)
+;; 2
+;; CL-USER> (schedule-advance! *sched*)
+;; 0
+;; CL-USER> *sched*
+;; #(#<STACK 4 5 > #<STACK > #<STACK >)
+;; CL-USER> (schedule-current-period *sched*)
+;; #<STACK 4 5 >

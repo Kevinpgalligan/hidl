@@ -1,0 +1,216 @@
+#########################################################
+# Here's where I tried to set up an half-adder, but the #
+# interface of the schedule is not fully defined.       #
+#########################################################
+
+HIDDEN-LANGUAGE> (defparameter *x* (make-lgate 'or 2))
+; compiling (DEFCLASS LGATE ...); Evaluation aborted on #<SB-PCL::INITARG-ERROR {1003923953}>.
+HIDDEN-LANGUAGE> (defparameter *x* (make-lgate 'or 2))
+
+*X*
+HIDDEN-LANGUAGE> (lgate-inputs *x*)
+#(0 0)
+HIDDEN-LANGUAGE> (lgate-properties *x*)
+; in: LGATE-PROPERTIES *X*
+;     (HIDDEN-LANGUAGE::LGATE-PROPERTIES HIDDEN-LANGUAGE::*X*)
+; 
+; caught STYLE-WARNING:
+;   undefined function: LGATE-PROPERTIES
+; 
+; compilation unit finished
+;   Undefined function:
+;     LGATE-PROPERTIES
+;   caught 1 STYLE-WARNING condition
+; Evaluation aborted on #<UNDEFINED-FUNCTION LGATE-PROPERTIES {1003B7ACD3}>.
+HIDDEN-LANGUAGE> (lgate-output *x*)
+0
+HIDDEN-LANGUAGE> (lgate-observers *x*)
+NIL
+HIDDEN-LANGUAGE> (lgate-type *x*)
+OR
+HIDDEN-LANGUAGE> (lgate-compute-fn *x*)
+#<FUNCTION COMPUTE-LGATE-OR>
+HIDDEN-LANGUAGE> (lgate-delay *x*)
+4
+HIDDEN-LANGUAGE> (defparameter *y* (make-lgate 'and 2))
+*Y*
+HIDDEN-LANGUAGE> (defparameter *z* (make-lgate 'not 1))
+*Z*
+HIDDEN-LANGUAGE> (defparameter *w* (make-lgate 'and 2))
+*W*
+HIDDEN-LANGUAGE> (lgate-add-observer! *x* (make-observing-lgate *y* 0))
+(NIL . #<OBSERVING-LGATE {1003E49803}>)
+HIDDEN-LANGUAGE> (setf *x* (make-lgate 'or 2))
+#<LGATE {1003E4CAA3}>
+; compiling (DEFUN LGATE-ADD-OBSERVER! ...)
+HIDDEN-LANGUAGE> (lgate-add-observer! *x* (make-observing-lgate *y* 0))
+
+(#<OBSERVING-LGATE {1003E4D5D3}>)
+HIDDEN-LANGUAGE> (lgate-add-observer! *z* (make-observing-lgate *y* 1))
+(#<OBSERVING-LGATE {1003F1A2D3}>)
+HIDDEN-LANGUAGE> (lgate-add-observer! *w* (make-observing-lgate *z* 0))
+(#<OBSERVING-LGATE {1003F588B3}>)
+HIDDEN-LANGUAGE> (loop for lgate in (list *x* *y* *z* *w*)
+                       do nil)
+; Evaluation aborted on #<SB-INT:SIMPLE-PROGRAM-ERROR "~?~%current LOOP context:~{ ~S~}." {1003FC81A3}>.
+HIDDEN-LANGUAGE> (loop for lgate in (list *x* *y* *z* *w*)
+                       do (format t "hi~%"))
+hi
+hi
+hi
+hi
+NIL
+HIDDEN-LANGUAGE> (defparameter *schedule* (make-schedule 10))
+*SCHEDULE*
+; compiling (DEFUN LGATE-FLIP-INPUT! ...)
+; compiling (DEFUN LGATE-SET-INPUT! ...)
+HIDDEN-LANGUAGE> (lgate-set-input! *x* 0 1)
+
+1
+HIDDEN-LANGUAGE> (lgate-set-input! *x* 1 1)
+1
+HIDDEN-LANGUAGE> (lgate-set-input! *w* 0 1)
+1
+HIDDEN-LANGUAGE> (lgate-set-input! *w* 1 1)
+1
+HIDDEN-LANGUAGE> (loop for lgate in (list *x* *y* *z* *w*)
+                       for i = 0 then (1+ i)
+                       do (when (not (= (lgate-output lgate) (lgate-compute-output lgate)))
+                            (format t "~a~%" i)))
+; compiling (DEFUN LGATE-COMPUTE-OUTPUT ...); Evaluation aborted on #<SB-INT:SIMPLE-PROGRAM-ERROR "invalid number of arguments: ~S" {1004736FA3}>.
+HIDDEN-LANGUAGE> (loop for lgate in (list *x* *y* *z* *w*)
+                       for i = 0 then (1+ i)
+                       do (when (not (= (lgate-output lgate) (lgate-compute-output lgate)))
+                            (format t "~a~%" i)))
+0
+; Evaluation aborted on #<SB-PCL::NO-APPLICABLE-METHOD-ERROR {1004A82833}>.
+HIDDEN-LANGUAGE> *lgate-properties*
+#<HASH-TABLE :TEST EQL :COUNT 3 {10022E3EA3}>
+HIDDEN-LANGUAGE> (gethash 'and *lgate-properties*)
+#<LGATE-PROPERTIES {10025266A3}>
+T
+HIDDEN-LANGUAGE> (gethash 'or *lgate-properties*)
+#<LGATE-PROPERTIES {10025266B3}>
+T
+HIDDEN-LANGUAGE> (gethash 'not *lgate-properties*)
+NIL
+NIL
+; compiling (DEF-LGATE NOT ...)
+HIDDEN-LANGUAGE> (gethash 'not *lgate-properties*)
+
+#<LGATE-PROPERTIES {1004ECA7B3}>
+T
+; compiling (DEFUN MAKE-LGATE ...)
+HIDDEN-LANGUAGE> (setf *z* (make-gate 'not 1))
+; in: SETF *Z*
+;     (HIDDEN-LANGUAGE::MAKE-GATE 'NOT 1)
+; 
+; caught STYLE-WARNING:
+;   undefined function: MAKE-GATE
+; 
+; compilation unit finished
+;   Undefined function:
+;     MAKE-GATE
+;   caught 1 STYLE-WARNING condition
+; Evaluation aborted on #<UNDEFINED-FUNCTION MAKE-GATE {1004FA4CF3}>.
+HIDDEN-LANGUAGE> (setf *z* (make-lgate 'not 1))
+#<LGATE {1005172543}>
+HIDDEN-LANGUAGE> (lgate-add-observer! *w* (make-observing-lgate *z* 0))
+(#<OBSERVING-LGATE {100519C063}> #<OBSERVING-LGATE {1003F588B3}>)
+HIDDEN-LANGUAGE> (loop for lgate in (list *x* *y* *z* *w*)
+                       for i = 0 then (1+ i)
+                       do (when (not (= (lgate-output lgate) (lgate-compute-output lgate)))
+                            (format t "~a~%" i)))
+0
+3
+NIL
+HIDDEN-LANGUAGE> (logxor 1 0)
+1
+HIDDEN-LANGUAGE> (logxor 1 1)
+0
+; compiling (DEFUN COMPUTE-LGATE-NOT ...)
+
+; file: /tmp/slimeAPL7N9
+; in: DEFUN COMPUTE-LGATE-NOT
+;     (HIDDEN-LANGUAGE::INPUTS-GET 0)
+; 
+; caught STYLE-WARNING:
+;   The function was called with one argument, but wants exactly two.
+
+;     (DEFUN HIDDEN-LANGUAGE::COMPUTE-LGATE-NOT (HIDDEN-LANGUAGE::INPUTS)
+;       (LOGXOR 1 (HIDDEN-LANGUAGE::INPUTS-GET 0)))
+; --> PROGN SB-IMPL::%DEFUN SB-IMPL::%DEFUN SB-INT:NAMED-LAMBDA 
+; ==>
+;   #'(SB-INT:NAMED-LAMBDA HIDDEN-LANGUAGE::COMPUTE-LGATE-NOT
+;         (HIDDEN-LANGUAGE::INPUTS)
+;       (BLOCK HIDDEN-LANGUAGE::COMPUTE-LGATE-NOT
+;         (LOGXOR 1 (HIDDEN-LANGUAGE::INPUTS-GET 0))))
+; 
+; caught STYLE-WARNING:
+;   The variable INPUTS is defined but never used.
+; 
+; compilation unit finished
+;   caught 2 STYLE-WARNING conditions
+; compiling (DEFUN COMPUTE-LGATE-NOT ...)
+; compiling (DEF-LGATE NOT ...)
+HIDDEN-LANGUAGE> (loop for lgate in (list *x* *y* *z* *w*)
+                       for i = 0 then (1+ i)
+                       do (when (not (= (lgate-output lgate) (lgate-compute-output lgate)))
+                            (format t "~a~%" i)))
+0
+3
+NIL
+HIDDEN-LANGUAGE> (lgate-compute-fn *z*)
+#<FUNCTION COMPUTE-LGATE-XOR>
+HIDDEN-LANGUAGE> (setf (slot-value *z* 'properties) (gethash 'not *lgate-properties*))
+#<LGATE-PROPERTIES {10053CAE73}>
+HIDDEN-LANGUAGE> (lgate-compute-fn *z*)
+#<FUNCTION COMPUTE-LGATE-NOT>
+HIDDEN-LANGUAGE> (loop for lgate in (list *x* *y* *z* *w*)
+                       for i = 0 then (1+ i)
+                       do (when (not (= (lgate-output lgate) (lgate-compute-output lgate)))
+                            (format t "~a~%" i)))
+0
+2
+3
+NIL
+HIDDEN-LANGUAGE> 
+(loop for lgate in (list *x* *y* *z* *w*)
+      for i = 0 then (1+ i)
+      do (when (not (= (lgate-output lgate) (lgate-compute-output lgate)))
+           (schedule-add-event (acquire-event ))))
+; in: LOOP FOR
+;     (HIDDEN-LANGUAGE::ACQUIRE-EVENT)
+; 
+; caught STYLE-WARNING:
+;   The function was called with zero arguments, but wants exactly three.
+; in: LOOP FOR
+;     (HIDDEN-LANGUAGE::SCHEDULE-ADD-EVENT (HIDDEN-LANGUAGE::ACQUIRE-EVENT))
+; 
+; caught STYLE-WARNING:
+;   undefined function: SCHEDULE-ADD-EVENT
+; 
+; compilation unit finished
+;   Undefined function:
+;     SCHEDULE-ADD-EVENT
+;   caught 2 STYLE-WARNING conditions
+; Evaluation aborted on #<SB-INT:SIMPLE-PROGRAM-ERROR "invalid number of arguments: ~S" {1005670813}>.
+HIDDEN-LANGUAGE> (defparameter *event-pool* (make-event-pool))
+*EVENT-POOL*
+HIDDEN-LANGUAGE> (loop for lgate in (list *x* *y* *z* *w*)
+                       for i = 0 then (1+ i)
+                       do (let ((new-value (lgate-compute-output lgate)))
+                            (when (not (= new-value (lgate-output lgate)))
+                              (schedule-add-event! *schedule* (acquire-event *event-pool* lgate new-value) (lgate-delay lgate)))))
+NIL
+HIDDEN-LANGUAGE> *schedule*
+#(#<STACK > #<STACK >
+  #<STACK #S(EVENT :LGATE #<LGATE {1005172543}> :NEW-VALUE 1) > #<STACK >
+  #<STACK #S(EVENT
+             :LGATE #<LGATE {1003E4CAA3}>
+             :NEW-VALUE 1) #S(EVENT
+                              :LGATE #<LGATE {1003D87733}>
+                              :NEW-VALUE 1) >
+  #<STACK > #<STACK > #<STACK > #<STACK > #<STACK >)
+HIDDEN-LANGUAGE> (execute-step *schedule* 0 *event-pool*)
+
