@@ -3,11 +3,13 @@
 ;; I should completely define the API and write
 ;; sample components using it before I implement
 ;; the actual macros.
+;; Change name to 'defcircuit'? Sounds better. Circuits and subcircuits.
 (defcomponent half-adder (arguments-for-half-adder-go-here)
   ;; This is a form that defines the labels for the inputs,
   ;; if any, and the number of inputs. Can make use of the arguments.
   ;; Need to consider what this will look like.
-  (list 'a 'b) 
+  (declare-inputs (list a num-bits)) ;; labels can look like (a 0), (a 1), ..., (a (1- num-bits))
+  (declare-inputs (list b num-bits))
   ;; and this is the code that is executed to create an
   ;; instance of the component.
   ;; with-components automatically stores the resulting sub-components
