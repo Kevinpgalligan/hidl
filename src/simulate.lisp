@@ -49,6 +49,7 @@ structures are reused rather than being allocated constantly."
         event)))
 
 (defun release-event (event-pool event)
+  ;; Shouldn't we add it back to the event pool here?
   (with-slots (lgate new-value)
       event
     (setf lgate nil

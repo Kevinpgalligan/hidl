@@ -2,6 +2,7 @@
 A computer emulation framework based on Code: The Hidden Language of Computer Hardware.
 
 ### TODO
+- Add unit tests for existing code.
 - Finish the schedule interface so that the half-adder test works (see 'test-session.txt').
 - Last touches to simulator (add all gates to schedule or whatever at the beginning).
 - Somehow hide interface of schedule & lgates better, so it's obvious how to use them. Also, fix ugly parts of the interface; having to specify number of inputs for gates (should be optional), and NOT gates should always have 1.
@@ -10,7 +11,7 @@ A computer emulation framework based on Code: The Hidden Language of Computer Ha
 ### Dumping brainstorming
 A nice metric: how many events per cycle are being executed.
 
-Another cool idea: calculate the 'breath' of the circuit graph, what's the longest number of cycles it could take a signal to propagate from 1 end to another?
+Another cool idea: calculate the 'breadth' of the circuit graph, what's the longest number of cycles it could take a signal to propagate from 1 end to another?
 
 Nodes are gates, edges are inputs/outputs, weights on edges are the prop delay.
 
@@ -18,14 +19,11 @@ Nodes are gates, edges are inputs/outputs, weights on edges are the prop delay.
 Basic circuit to test: a single adder (2 lgates for setting input, print the output).
 
 From circuit to CPU:
+   * ALU.
    * Memory cells used to store 'instructions',
-   * multiplexer thing maps instruction in memory cell to appropriate
-   * circuitry for that instruction.
-   * I'm unsure how instruction arguments are read; instruction pointer
-   is stored somewhere, add 1 to it for each expected argument.
-   * Assembler should be pretty easy? Base the instruction
-   set on 6502, perhaps. There are also instructions to read/write to/from
-   the memory cells, of course.
+   * multiplexer thing maps instruction in memory cell to appropriate circuitry for that instruction.
+   * I'm unsure how instruction arguments are read; instruction pointer is stored somewhere, add 1 to it for each expected argument.
+   * Assembler should be pretty easy? Base the instruction set on 6502, perhaps. There are also instructions to read/write to/from the memory cells, of course.
    * Assembler needs to be able to define data.
 
 FINALLY: BASIC in assembly language.
