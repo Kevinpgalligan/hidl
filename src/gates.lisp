@@ -31,7 +31,7 @@
   (inputs-get (lgate-inputs lgate) i))
 
 (defun lgate-set-input! (lgate i value)
-  (inputs-register-change! (lgate-inputs lgate) i value))
+  (setf (aref (lgate-inputs lgate) i) value))
 
 (defun lgate-compute-output (lgate)
   (funcall (lgate-compute-fn lgate) (lgate-inputs lgate)))
@@ -47,25 +47,31 @@
   (setf (gethash type *lgate-properties*)
         (make-instance 'lgate-properties :name type :compute function :delay propagation-delay)))
 
-(defmacro def-lgate (name function propagation-delay)
-  `(register-lgate ',name ,function ,propagation-delay))
+(defmacro def-lgate (name function propagation-delay
+                     &key default-inputs fixed-inputs)
+  (let ((args
+          (cond
+            (fixed-inputs (list))
+            (default-inputs `(&key (n ,default-inputs)))
+            (t (list 'n)))))
+    `(progn
+       (defun ,(alexandria:symbolicate 'make- name '-gate)
+           (,@args)
+         (make-lgate ',name
+                     ,@(cond
+                         (fixed-inputs (list fixed-inputs))
+                         (default-inputs (list 'n))
+                         (t args))))
+       (register-lgate ',name ,function ,propagation-delay))))
 
 (defun make-inputs (size)
-  (make-array size :initial-element 0 :element-type 'integer))
+  (make-array size :initial-element 0 :element-type 'bit))
 
 (defun inputs-size (inputs)
-  (array-dimension inputs 0))
+  (length inputs))
 
 (defun inputs-get (inputs i)
-  (if (zerop (aref inputs i))
-      0
-      1))
-
-(defun inputs-register-change! (inputs i new-value)
-  (declare (bit new-value))
-  (if (zerop new-value)
-      (decf (aref inputs i))
-      (incf (aref inputs i))))
+  (aref inputs i))
 
 (defun inputs-set! (inputs i new-value)
   "This overrides the value of an input, even if other wires are sending
@@ -107,15 +113,10 @@ power to it. So use with caution, preferably only for gates w/ a single input."
 
 ;;;; Gate definitions! They're the building blocks of circuits.
 ;;;; I may or may not implement NAND in terms of other gates.
-(def-lgate and #'compute-lgate-and 4)
-(def-lgate or #'compute-lgate-or 4)
-(def-lgate xor #'compute-lgate-xor 8)
-(def-lgate not #'compute-lgate-not 2)
-;; This one just passes on whatever value is handed to it.
-;; Careful with propagation-delay=0, it could result in an
-;; infinite loop if 2 const lgates are connected together.
-;; Maybe the delay should be 1?
-;(def-lgate const compute-lgate-const 0)
+(def-lgate and #'compute-lgate-and 4 :default-inputs 2)
+(def-lgate or #'compute-lgate-or 4 :default-inputs 2)
+(def-lgate xor #'compute-lgate-xor 8 :default-inputs 2)
+(def-lgate not #'compute-lgate-not 2 :fixed-inputs 1)
 
 (defclass observing-lgate ()
   ((lgate
