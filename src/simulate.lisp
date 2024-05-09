@@ -1,4 +1,4 @@
-(in-package hidden-language)
+(in-package hidl)
 
 (defun simulate-circuit (circuit frequency max-propagation-delay)
   ;; TODO: calculate max prop delay from circuit
@@ -25,53 +25,53 @@
 (defun execute-step (schedule ticks event-pool)
   (while (not (schedule-current-period-empty-p schedule))
          do (let ((event (schedule-current-period-remove-next-event! schedule)))
-              (with-slots (lgate new-value)
+              (with-slots (gate new-value)
                   event
-                (when (not (= new-value (lgate-output lgate)))
-                  (setf (slot-value lgate 'output) new-value)
-                  (propagate-to-observers! lgate schedule)))
+                (when (not (= new-value (gate-output gate)))
+                  (setf (slot-value gate 'output) new-value)
+                  (propagate-to-observers! gate schedule)))
               (release-event event-pool event)))
   (schedule-advance! schedule))
 
-(defstruct event lgate new-value)
+(defstruct event gate new-value)
 
 (defun make-event-pool ()
   "Use this data structure to avoid garbage churn, event data
 structures are reused rather than being allocated constantly."
   (make-stack))
 
-(defun acquire-event (event-pool lgate new-value)
+(defun acquire-event (event-pool gate new-value)
   (if (stack-empty-p *event-pool*)
-      (make-event :lgate lgate :new-value new-value)
+      (make-event :gate gate :new-value new-value)
       (let ((event (stack-pop! event-pool)))
-        (setf (slot-value event 'lgate) lgate
+        (setf (slot-value event 'gate) gate
               (slot-value event 'new-value) new-value)
         event)))
 
 (defun release-event (event-pool event)
   ;; Shouldn't we add it back to the event pool here?
-  (with-slots (lgate new-value)
+  (with-slots (gate new-value)
       event
-    (setf lgate nil
+    (setf gate nil
           new-value nil)))
 
-(defun propagate-to-observers! (lgate schedule)
-  (loop for observer in (lgate-observers lgate)
-        ;; For now, assume that all observers are of type OBSERVING-LGATE.
-        ;; This type of observer receives the new output value of one lgate.
-        ;; It updates one of the inputs of the receiving lgate. If there's
+(defun propagate-to-observers! (gate schedule)
+  (loop for observer in (gate-observers gate)
+        ;; For now, assume that all observers are of type OBSERVING-GATE.
+        ;; This type of observer receives the new output value of one gate.
+        ;; It updates one of the inputs of the receiving gate. If there's
         ;; a change in the input, it 
         ;; Later, we can generalise this.
-        do (with-accessors ((receiving-lgate lgate)
+        do (with-accessors ((receiving-gate gate)
                             (input-index input-index))
                observer
-             (let ((old-value (lgate-ith-input receiving-lgate input-index)))
-               (inputs-register-change! (lgate-inputs receiving-lgate)
+             (let ((old-value (gate-ith-input receiving-gate input-index)))
+               (inputs-register-change! (gate-inputs receiving-gate)
                                         input-index
-                                        (lgate-output lgate))
-               (let ((new-value (lgate-ith-input receiving-lgate input-index)))
+                                        (gate-output gate))
+               (let ((new-value (gate-ith-input receiving-gate input-index)))
                  (when (not (= old-value new-value))
                    (schedule-add-event!
                     schedule
-                    (acquire-event event-pool receiving-lgate (lgate-compute-output receiving-lgate))
-                    (lgate-delay receiving-lgate))))))))
+                    (acquire-event event-pool receiving-gate (gate-compute-output receiving-gate))
+                    (gate-delay receiving-gate))))))))

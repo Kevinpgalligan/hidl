@@ -1,6 +1,6 @@
-(defpackage :hidden-language-test
-  (:use :cl :hidden-language :fiveam))
+(defpackage :hidl-test
+  (:use :cl :hidl :fiveam))
 
-(in-package hidden-language-test)
+(in-package hidl-test)
 
-(def-suite hidden-language)
+(def-suite hidl)

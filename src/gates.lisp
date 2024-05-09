@@ -1,53 +1,53 @@
-(in-package hidden-language)
+(in-package hidl)
 
-(defparameter *lgate-properties* (make-hash-table))
+(defparameter *gate-properties* (make-hash-table))
 
-(defclass lgate ()
+(defclass gate ()
   ((inputs :initarg :inputs)
    (output :initarg :output)
    (observers :initarg :observers)
    (properties :initarg :properties)))
 
-(defun make-lgate (type num-inputs)
-  (make-instance 'lgate
+(defun make-gate (type num-inputs)
+  (make-instance 'gate
                  :inputs (make-inputs num-inputs)
                  :output 0
                  :observers nil
-                 :properties (or (gethash type *lgate-properties*)
+                 :properties (or (gethash type *gate-properties*)
                                  (error "Unknown logic gate type"))))
 
-(defun lgate-inputs (lgate) (slot-value lgate 'inputs))
-(defun lgate-output (lgate) (slot-value lgate 'output))
-(defun lgate-observers (lgate) (slot-value lgate 'observers))
-(defun lgate-type (lgate) (slot-value (slot-value lgate 'properties) 'name))
-(defun lgate-compute-fn (lgate) (slot-value (slot-value lgate 'properties) 'compute))
-(defun lgate-delay (lgate) (slot-value (slot-value lgate 'properties) 'delay))
+(defun gate-inputs (gate) (slot-value gate 'inputs))
+(defun gate-output (gate) (slot-value gate 'output))
+(defun gate-observers (gate) (slot-value gate 'observers))
+(defun gate-type (gate) (slot-value (slot-value gate 'properties) 'name))
+(defun gate-compute-fn (gate) (slot-value (slot-value gate 'properties) 'compute))
+(defun gate-delay (gate) (slot-value (slot-value gate 'properties) 'delay))
 
-(defun lgate-add-observer! (lgate observer)
-  (setf (slot-value lgate 'observers)
-        (cons observer (slot-value lgate 'observers))))
+(defun gate-add-observer! (gate observer)
+  (setf (slot-value gate 'observers)
+        (cons observer (slot-value gate 'observers))))
 
-(defun lgate-ith-input (lgate i)
-  (inputs-get (lgate-inputs lgate) i))
+(defun gate-ith-input (gate i)
+  (inputs-get (gate-inputs gate) i))
 
-(defun lgate-set-input! (lgate i value)
-  (setf (aref (lgate-inputs lgate) i) value))
+(defun gate-set-input! (gate i value)
+  (setf (aref (gate-inputs gate) i) value))
 
-(defun lgate-compute-output (lgate)
-  (funcall (lgate-compute-fn lgate) (lgate-inputs lgate)))
+(defun gate-compute-output (gate)
+  (funcall (gate-compute-fn gate) (gate-inputs gate)))
 
 ;; Should be treated as a singleton that is shared between all instances
-;; of a particular type of lgate.
-(defclass lgate-properties ()
+;; of a particular type of gate.
+(defclass gate-properties ()
   ((name :initarg :name)
    (compute :initarg :compute)
    (delay :initarg :delay)))
 
-(defun register-lgate (type function propagation-delay)
-  (setf (gethash type *lgate-properties*)
-        (make-instance 'lgate-properties :name type :compute function :delay propagation-delay)))
+(defun register-gate (type function propagation-delay)
+  (setf (gethash type *gate-properties*)
+        (make-instance 'gate-properties :name type :compute function :delay propagation-delay)))
 
-(defmacro def-lgate (name function propagation-delay
+(defmacro def-gate (name function propagation-delay
                      &key default-inputs fixed-inputs)
   (let ((args
           (cond
@@ -57,12 +57,12 @@
     `(progn
        (defun ,(alexandria:symbolicate 'make- name '-gate)
            (,@args)
-         (make-lgate ',name
+         (make-gate ',name
                      ,@(cond
                          (fixed-inputs (list fixed-inputs))
                          (default-inputs (list 'n))
                          (t args))))
-       (register-lgate ',name ,function ,propagation-delay))))
+       (register-gate ',name ,function ,propagation-delay))))
 
 (defun make-inputs (size)
   (make-array size :initial-element 0 :element-type 'bit))
@@ -74,8 +74,6 @@
   (aref inputs i))
 
 (defun inputs-set! (inputs i new-value)
-  "This overrides the value of an input, even if other wires are sending
-power to it. So use with caution, preferably only for gates w/ a single input."
   (declare (bit new-value))
   (setf (aref inputs i) new-value))
 
@@ -85,46 +83,46 @@ power to it. So use with caution, preferably only for gates w/ a single input."
            for ,ref = (inputs-get ,inputs i)
            do ,@body)))
 
-(defun compute-lgate-or (inputs)
+(defun compute-gate-or (inputs)
   (or (iter-inputs (inputs x)
         (when (= x 1)
           (return 1)))
       0))
 
-(defun compute-lgate-and (inputs)
+(defun compute-gate-and (inputs)
   (or (iter-inputs (inputs x)
         (when (= x 0)
           (return 0)))
       1))
 
-(defun compute-lgate-xor (inputs)
+(defun compute-gate-xor (inputs)
   (let ((result 0))
     (iter-inputs (inputs x)
       (setf result (logxor result x)))
     result))
 
-(defun compute-lgate-const (inputs)
+(defun compute-gate-const (inputs)
   (iter-inputs (inputs x)
     (return x)))
 
-(defun compute-lgate-not (inputs)
+(defun compute-gate-not (inputs)
   ;; There should only be 1 input.
   (logxor 1 (inputs-get inputs 0)))
 
 ;;;; Gate definitions! They're the building blocks of circuits.
 ;;;; I may or may not implement NAND in terms of other gates.
-(def-lgate and #'compute-lgate-and 4 :default-inputs 2)
-(def-lgate or #'compute-lgate-or 4 :default-inputs 2)
-(def-lgate xor #'compute-lgate-xor 8 :default-inputs 2)
-(def-lgate not #'compute-lgate-not 2 :fixed-inputs 1)
+(def-gate and #'compute-gate-and 4 :default-inputs 2)
+(def-gate or #'compute-gate-or 4 :default-inputs 2)
+(def-gate xor #'compute-gate-xor 8 :default-inputs 2)
+(def-gate not #'compute-gate-not 2 :fixed-inputs 1)
 
-(defclass observing-lgate ()
-  ((lgate
-    :initarg :lgate
-    :reader lgate)
+(defclass observing-gate ()
+  ((gate
+    :initarg :gate
+    :reader gate)
    (input-index
     :initarg :input-index
     :reader input-index)))
 
-(defun make-observing-lgate (lgate input-index)
-  (make-instance 'observing-lgate :lgate lgate :input-index input-index))
+(defun make-observing-gate (gate input-index)
+  (make-instance 'observing-gate :gate gate :input-index input-index))

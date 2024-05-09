@@ -15,14 +15,14 @@
   ;; with-components automatically stores the resulting sub-components
   ;; in the component instance.
   ;; Hmmm, need to allow loops when creating components.
-  (with-components ((x (lgate and))
-                    (y (lgate or)))
+  (with-components ((x (gate and))
+                    (y (gate or)))
     ;; WIRE maps from a transmitter to a receiver.
     ;; if the transmitter is one of the inputs for the component,
     ;; then we store the receiver in a list of all receivers for
     ;; that input. Then, when we wire something to the input
     ;; labelled 'a', we recursively wire it to all the sub-components
-    ;; associated with 'a', until we get to the lgate level.
+    ;; associated with 'a', until we get to the gate level.
     ;; If that makes sense.
     ;; If the transmitter is a gate, the receiver must be added
     ;; as an observer.

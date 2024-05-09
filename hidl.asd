@@ -1,9 +1,9 @@
-(defpackage :hidden-language-asd
+(defpackage :hidl-asd
   (:use :cl :asdf))
 
-(in-package :hidden-language-asd)
+(in-package :hidl-asd)
 
-(defsystem hidden-language
+(defsystem hidl
   :license "MIT"
   :author "Kevin Galligan"
   :depends-on (:alexandria)
@@ -12,4 +12,5 @@
   :components ((:file "package")
                (:file "schedule")
                (:file "gates")
-               (:file "simulate")))
+               ;(:file "simulate")
+               ))

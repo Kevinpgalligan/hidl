@@ -1,11 +1,11 @@
-### Description
+### hidl
 A computer emulation framework based on Code: The Hidden Language of Computer Hardware.
 
 ### TODO
 - Add unit tests for existing code.
 - Finish the schedule interface so that the half-adder test works (see 'test-session.txt').
 - Last touches to simulator (add all gates to schedule or whatever at the beginning).
-- Somehow hide interface of schedule & lgates better, so it's obvious how to use them. Also, fix ugly parts of the interface; having to specify number of inputs for gates (should be optional), and NOT gates should always have 1.
+- Somehow hide interface of schedule & lgates better, so it's obvious how to use them.
 - Design macro DSL for components and constructing circuits.
 
 ### Dumping brainstorming
