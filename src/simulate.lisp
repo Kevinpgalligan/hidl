@@ -1,20 +1,18 @@
 (in-package hidl)
 
+;; This should be calculated...
+(defparameter *max-delay* 9)
+
 (defun simulate-circuit (circuit frequency max-propagation-delay)
-  ;; TODO: calculate max prop delay from circuit
   (let ((seconds-per-tick (/ 1 frequency))
         (ticks 0)
-        (schedule (make-schedule (max-possible-propagation-delay)))
+        (schedule (make-schedule *max-delay*))
         (event-pool (make-event-pool))
         (next-tick-time (get-float-time-seconds)))
     (loop do (wait-until next-tick-time)
           do (incf ticks)
-          do (execute-step schedule ticks)
-          do (incf next-tick-time seconds-per-tick))))
-
-(defun max-possible-propagation-delay ()
-  ;; TODO not sure how to do this
-  )
+          do (incf next-tick-time seconds-per-tick)
+          do (execute-step schedule ticks))))
 
 (defun wait-until (time)
   (sleep (max 0 (- time (get-float-time-seconds)))))
@@ -24,7 +22,7 @@
 
 (defun execute-step (schedule ticks event-pool)
   (while (not (schedule-current-period-empty-p schedule))
-         do (let ((event (schedule-current-period-remove-next-event! schedule)))
+         do (let ((event (schedule-remove-next-event! schedule)))
               (with-slots (gate new-value)
                   event
                 (when (not (= new-value (gate-output gate)))
@@ -49,19 +47,21 @@ structures are reused rather than being allocated constantly."
         event)))
 
 (defun release-event (event-pool event)
-  ;; Shouldn't we add it back to the event pool here?
   (with-slots (gate new-value)
       event
     (setf gate nil
-          new-value nil)))
+          new-value nil)
+    (stack-push! event-pool event)))
 
 (defun propagate-to-observers! (gate schedule)
   (loop for observer in (gate-observers gate)
         ;; For now, assume that all observers are of type OBSERVING-GATE.
         ;; This type of observer receives the new output value of one gate.
         ;; It updates one of the inputs of the receiving gate. If there's
-        ;; a change in the input, it 
-        ;; Later, we can generalise this.
+        ;; a change in the input, it [[future Kevin: recomputes the output and
+        ;; schedules that change in output for the future. Also need to consider
+        ;; how to deduplicate]].
+        ;; Later, we can generalise to other types of observers.
         do (with-accessors ((receiving-gate gate)
                             (input-index input-index))
                observer

@@ -2,7 +2,6 @@
 A computer emulation framework based on Code: The Hidden Language of Computer Hardware.
 
 ### TODO
-- Maybe refactor schedule to use less verbose names.
 - Review simulate.lisp and add unit tests. One possible addition: add all gates to the schedule at the start.
 - Add half-adder test for simulator.
 - Design macro DSL for components and constructing circuits.

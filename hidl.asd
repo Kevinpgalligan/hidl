@@ -10,6 +10,7 @@
   :pathname "src"
   :serial t
   :components ((:file "package")
+               (:file "stack")
                (:file "schedule")
                (:file "gates")
                ;(:file "simulate")
